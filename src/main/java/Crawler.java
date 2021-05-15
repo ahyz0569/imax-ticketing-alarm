@@ -7,13 +7,15 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 
 public class Crawler {
-    public static void main(String[] args) {
+
+    public static HashMap<LocalDateTime, String> crawler() {
 
         /*
-        상영시간표 정보를 담을 HashMap 생성
+        상영시간표 정보를 담을 HashMap
         - Key: 상영날짜+상영시간(12자리, 숫자형태의 String 값 -> LocalDateTime 타입으로 변경)
         - Value: 영화 제목
         */
@@ -87,9 +89,35 @@ public class Crawler {
         }// while
 
         // HashMap 출력하기
+//        for (LocalDateTime key : imaxScreenMoviesMap.keySet()) {
+//            System.out.println(String.format("키 : %s, 값: %s", key, imaxScreenMoviesMap.get(key)));
+//        }
+        return imaxScreenMoviesMap;
+    }
+    
+    // Telegram bot이 보낼 메세지 세팅
+    public static String timeTableMessage(){
+
+        HashMap<LocalDateTime, String> imaxScreenMoviesMap = crawler();
+
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM월 dd일 ");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH : mm");
+
+        LocalDateTime now = LocalDateTime.now();
+
+        StringBuilder sb = new StringBuilder()
+                .append(now.format(dateFormatter))
+                .append("용산 IMAX 시간표\n");
+
         for (LocalDateTime key : imaxScreenMoviesMap.keySet()) {
-            System.out.println(String.format("키 : %s, 값: %s", key, imaxScreenMoviesMap.get(key)));
+            if (ChronoUnit.DAYS.between(key, now)==0) {  // 조회시점을 기준으로 같은 날인지 여부 체크
+                sb.append(imaxScreenMoviesMap.get(key))
+                        .append(" ")
+                        .append(key.format(timeFormatter))
+                        .append("\n");
+            }
         }
+        return sb.toString();
     }
 
     // LocalDate -> String 타입으로 변환 (예: 2021-05-14 -> 20210514)
