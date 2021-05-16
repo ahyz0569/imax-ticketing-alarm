@@ -3,23 +3,28 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.time.Duration;
+import java.util.logging.Logger;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
+import java.util.TreeMap;
 
 public class Crawler {
 
-    public static HashMap<LocalDateTime, String> crawler() {
+//    private final static Logger logger = LoggerFactory.getLogger(Crawler.class.getName());
+    private final static Logger logger = Logger.getGlobal();
+
+    public static TreeMap<LocalDateTime, String> crawler() {
 
         /*
         상영시간표 정보를 담을 HashMap
         - Key: 상영날짜+상영시간(12자리, 숫자형태의 String 값 -> LocalDateTime 타입으로 변경)
         - Value: 영화 제목
         */
-        HashMap<LocalDateTime, String> imaxScreenMoviesMap = new HashMap<>();
+        TreeMap<LocalDateTime, String> imaxScreenMoviesMap = new TreeMap<>();
 
         LocalDate now = LocalDate.now();
         String strDate = localDateToString(now);
@@ -85,29 +90,36 @@ public class Crawler {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            
+
         }// while
 
-        // HashMap 출력하기
-//        for (LocalDateTime key : imaxScreenMoviesMap.keySet()) {
-//            System.out.println(String.format("키 : %s, 값: %s", key, imaxScreenMoviesMap.get(key)));
-//        }
+        for (LocalDateTime key : imaxScreenMoviesMap.keySet()) {
+            logger.info("키: " + key.toString() + ", 값: " + imaxScreenMoviesMap.get(key));
+        }
         return imaxScreenMoviesMap;
     }
-    
+
     // Telegram bot이 보낼 메세지 세팅
     public static String timeTableMessage(){
 
-        HashMap<LocalDateTime, String> imaxScreenMoviesMap = crawler();
+        TreeMap<LocalDateTime, String> imaxScreenMoviesMap = crawler();
 
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM월 dd일 ");
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH : mm");
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime nowForCompare = LocalDate.now().atStartOfDay();
+        LocalDateTime now = LocalDate.now().atStartOfDay();
 
         StringBuilder sb = new StringBuilder()
-                .append(now.format(dateFormatter))
+                .append(nowForCompare.format(dateFormatter))
                 .append("용산 IMAX 시간표\n");
+
+        LocalDateTime firstMovieDateTime = imaxScreenMoviesMap.firstKey();
+
+        // 제일 최근 날짜로 조회되는 키의 날짜와 현재 날짜가 같지 않아서 다음날 시간표가 조회되는 경우에는 다음날짜로 표시하게 해야함
+        if (ChronoUnit.DAYS.between(firstMovieDateTime, nowForCompare) != 0){
+            sb.append("지금은 예매가능한 영화가 없습니다. 내일 시간표를 안내해드립니다.");
+        }
 
         for (LocalDateTime key : imaxScreenMoviesMap.keySet()) {
             if (ChronoUnit.DAYS.between(key, now)==0) {  // 조회시점을 기준으로 같은 날인지 여부 체크
