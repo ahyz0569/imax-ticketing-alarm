@@ -25,9 +25,19 @@ public class MyImaxAlarmBot extends TelegramLongPollingBot {
             SendMessage message = new SendMessage();    // Create a SendMessage object with mandatory fields
             message.setChatId(update.getMessage().getChatId().toString());
 
-//            message.setText(update.getMessage().getText());
-            message.setText(Crawler.timeTableMessage());
+            if (update.getMessage().getEntities()!=null){
+                update.getMessage().getEntities().stream()
+                        .filter(messageEntity -> messageEntity.getType().equals("bot_command"))
+                        .forEach(messageEntity -> message.setText("안녕하세요. 이 봇은 용산CGV IMAX 상영관의 시간표를 안내해주는 봇입니다."));
+            }
+
             logger.info(message.getText());
+
+            if (message.getText()==null){
+                message.setText(Crawler.timeTableMessage());
+                logger.info(message.getText());
+            }
+//            message.setText(update.getMessage().getText());
 
             try {
                 execute(message);
