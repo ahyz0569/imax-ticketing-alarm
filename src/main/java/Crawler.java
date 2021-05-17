@@ -44,44 +44,48 @@ public class Crawler {
             try {
                 // connection 생성
                 Document doc = Jsoup.connect(URL+strDate).get();
-//                System.out.println("strDate = " + strDate);
+                logger.info(strDate);
 
                 // Atrribute 탐색
                 Elements scheduleList = doc.getElementsByClass("col-times");
 
+                if (scheduleList.isEmpty() && stringToLocalDateTime(strDate, "0000").isAfter(now.atStartOfDay())){  // 조회 아에 안되는 경우
+                    duplCheck = false;
+                    break;
+                }
+
                 for (Element schedule : scheduleList) {
                     // title 검색
                     String movieTitle = schedule.select(".info-movie strong").text();
-//                    System.out.println("title = " + movieTitle);
 
                     Elements timetableElements = schedule.select(".info-timetable a");
                     // timetable 검색
                     for (Element timetableElement : timetableElements) {
-//                        System.out.println(timetableElement.toString());
-//                        System.out.println("=======");
 
                         String playDate = timetableElement.attr("data-playymd");
                         String playTime = timetableElement.attr("data-playstarttime");
 
                         LocalDateTime playDateTime = stringToLocalDateTime(playDate, playTime);
+                        logger.info(Integer.toString(playTime.length()));
 
                         if (playTime.length() >= 1) {   // 상영 시작 시간은 뜨지만 예매가 마감된 경우, 시간표가 존재하지 않는 경우를 제외하기 위해서
 
                             /*
-                            * 키로 등록할 값이 이미 존재하는 경우 while문 탈출
-                            * ('sect-schedule'에 등록되지 않은 날짜를 조회하는 경우 예매가능한 가장 최근 날짜의 페이지로 redirect 되기 때문)
-                            */
+                             * 키로 등록할 값이 이미 존재하는 경우 while문 탈출
+                             * ('sect-schedule'에 등록되지 않은 날짜를 조회하는 경우 예매가능한 가장 최근 날짜의 페이지로 redirect 되기 때문)
+                             */
                             if (imaxScreenMoviesMap.containsKey(playDateTime)) {
                                 duplCheck = false;
                                 break;
                             } else {
-//                                System.out.println(playDate + playTime + " :: " + movieTitle);
+                                logger.info("key: " + playDateTime.toString() + ", value: " + movieTitle);
                                 imaxScreenMoviesMap.put(playDateTime, movieTitle);
                             }
                         }
                     }
 
                 }// for문
+
                 // 조회할 날짜 데이터 증가
                 LocalDate date = now.plusDays(i);
                 strDate = localDateToString(date);
@@ -92,7 +96,6 @@ public class Crawler {
             }
 
         }// while
-
         for (LocalDateTime key : imaxScreenMoviesMap.keySet()) {
             logger.info("키: " + key.toString() + ", 값: " + imaxScreenMoviesMap.get(key));
         }
@@ -108,7 +111,7 @@ public class Crawler {
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH : mm");
 
         LocalDateTime nowForCompare = LocalDate.now().atStartOfDay();
-        LocalDateTime now = LocalDate.now().atStartOfDay();
+        LocalDateTime now = LocalDateTime.now();
 
         StringBuilder sb = new StringBuilder()
                 .append(nowForCompare.format(dateFormatter))
@@ -118,7 +121,7 @@ public class Crawler {
 
         // 제일 최근 날짜로 조회되는 키의 날짜와 현재 날짜가 같지 않아서 다음날 시간표가 조회되는 경우에는 다음날짜로 표시하게 해야함
         if (ChronoUnit.DAYS.between(firstMovieDateTime, nowForCompare) != 0){
-            sb.append("지금은 예매가능한 영화가 없습니다. 내일 시간표를 안내해드립니다.");
+            sb.append("지금은 예매가능한 영화가 없습니다. 내일 시간표를 안내해드립니다.\n");
         }
 
         for (LocalDateTime key : imaxScreenMoviesMap.keySet()) {

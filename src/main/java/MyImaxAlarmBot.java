@@ -3,7 +3,10 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.util.logging.Logger;
+
 public class MyImaxAlarmBot extends TelegramLongPollingBot {
+    private final static Logger logger = Logger.getGlobal();
 
     @Override
     public String getBotUsername() {
@@ -24,6 +27,7 @@ public class MyImaxAlarmBot extends TelegramLongPollingBot {
 
 //            message.setText(update.getMessage().getText());
             message.setText(Crawler.timeTableMessage());
+            logger.info(message.getText());
 
             try {
                 execute(message);
