@@ -3,7 +3,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 import java.io.IOException;
 import java.time.LocalDate;
@@ -17,7 +18,7 @@ public class Crawler {
 //    private final static Logger logger = LoggerFactory.getLogger(Crawler.class.getName());
     private final static Logger logger = Logger.getGlobal();
 
-    public static TreeMap<LocalDateTime, String> crawler() {
+    public static TreeMap<LocalDateTime, String> timeTableCrawler() {
 
         /*
         상영시간표 정보를 담을 HashMap
@@ -102,10 +103,36 @@ public class Crawler {
         return imaxScreenMoviesMap;
     }
 
+    /*
+    * imax 상영관에서 개봉하는 영화 리스트 크롤링(예매 예정작인 영화 이름을 알아야 하기 때문에)
+    * */
+    public static List<String> returnImaxLineUp() {
+        ArrayList<String> imaxLineUpList = new ArrayList<>();
+
+        String URL = "http://www.cgv.co.kr/theaters/special/theater-line-up.aspx?regioncode=07";
+
+        try {
+            Document document = Jsoup.connect(URL).get();
+            Elements elements = document.select(".box-contents a strong");
+
+            System.out.println("elements = " + elements);
+
+            for (Element element : elements) {
+                String movieTitle = element.text();
+                imaxLineUpList.add(movieTitle);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return imaxLineUpList;
+    }
+
     // Telegram bot이 보낼 메세지 세팅
     public static String timeTableMessage(){
 
-        TreeMap<LocalDateTime, String> imaxScreenMoviesMap = crawler();
+        TreeMap<LocalDateTime, String> imaxScreenMoviesMap = timeTableCrawler();
 
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM월 dd일 ");
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH : mm");
@@ -158,5 +185,15 @@ public class Crawler {
 
         return LocalDateTime.of(year, month, day, hour, minute);
     }
+
+    // String(날짜) -> LocalDate 타입으로 변환 (예: 0519 -> 2021-05-19)
+    public static LocalDate stringToLocalDate(String date) {
+        int year = LocalDate.now().getYear();
+        int month = Integer.parseInt(date.substring(0, 2));
+        int day = Integer.parseInt(date.substring(2, 4));
+
+        return LocalDate.of(year, month, day);
+    }
+    // 위의 stringToLocalDateTime 메서드와 겹치는 코드가 있으니 나중에 리팩토링을 해야 겠다
 
 }

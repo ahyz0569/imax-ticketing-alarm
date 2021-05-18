@@ -3,6 +3,11 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 public class MyImaxAlarmBot extends TelegramLongPollingBot {
@@ -20,24 +25,60 @@ public class MyImaxAlarmBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        // We check if the update has a message and the message has text
+
         if (update.hasMessage() && update.getMessage().hasText()) {
-            SendMessage message = new SendMessage();    // Create a SendMessage object with mandatory fields
+            SendMessage message = new SendMessage();
             message.setChatId(update.getMessage().getChatId().toString());
 
-            if (update.getMessage().getEntities()!=null){
-                update.getMessage().getEntities().stream()
-                        .filter(messageEntity -> messageEntity.getType().equals("bot_command"))
-                        .forEach(messageEntity -> message.setText("안녕하세요. 이 봇은 용산CGV IMAX 상영관의 시간표를 안내해주는 봇입니다."));
+            List<String> imaxLineUp = Crawler.returnImaxLineUp();
+            TreeMap<LocalDateTime, String> timeTableMap = Crawler.timeTableCrawler();
+
+            String messageText = update.getMessage().getText();
+            StringBuilder sb = new StringBuilder();
+
+            /*
+             * 영화 제목과 예매 날짜를 입력했을 때
+             * 예) 스파이럴, 0519
+             * */
+            if (messageText.contains(",")) {    // 입력 양식 검사(유효성)
+                String[] userInput = messageText.split(",");
+                LocalDate userInputDate = Crawler.stringToLocalDate(userInput[1].trim());  // 이 부분도 사실 검사해야 함
+                LocalDate now = LocalDate.now();
+
+                if (imaxLineUp.contains(userInput[0]) && !userInputDate.isBefore(now)) {  // 영화가 예매 라인업에 존재하고, 입력한 날짜가 현재보다 미래인 경우
+
+                    for (LocalDateTime playTime : timeTableMap.keySet()) {
+                        LocalDate playDate = playTime.toLocalDate();
+
+                        if (playDate.isEqual(userInputDate)) {   // 입력한 날짜에 이미 예매가 시작된 경우
+                            sb.append("그 영화 이미 예매 시작함");
+//                                .append("예매 시간표는 이거임");
+//                                .append(Crawler.timeTableMessage()) // timeTableMessage() 메소드를 수정하여 시간표 메세지로 전달하자.
+                            break;
+                        }
+                    }
+
+                    if (sb.length() == 0) { // 입력한 날짜에 예매가 열리지 않은 경우
+                        sb.append("ㅇㅋ 예매 시작하면 알려주겠음");
+                        alertOpenMovieTime(message.getChatId());
+                    }
+
+                } else if (ChronoUnit.DAYS.between(userInputDate, now) >= 15) {  // 다소 먼 미래인 경우
+                    sb.append("14일 이내에 들어와서 다시 입력하셈. \n");
+                    
+                } else {    // 예매 예정작에 없는 경우
+                    sb.append("그 영화는 예매 예정작에 없음 \n");
+
+                    for (String movieTitle : imaxLineUp) {
+                        sb.append(movieTitle).append("\n");
+                    }
+                    sb.append("위 영화 중에서 입력하셈");
+                }
+            } else {
+                sb.append("입력이 잘못 되었음. 다시 입력 하셈");
             }
 
-            logger.info(message.getText());
-
-            if (message.getText()==null){
-                message.setText(Crawler.timeTableMessage());
-                logger.info(message.getText());
-            }
-//            message.setText(update.getMessage().getText());
+            message.setText(sb.toString());
 
             try {
                 execute(message);
@@ -45,6 +86,13 @@ public class MyImaxAlarmBot extends TelegramLongPollingBot {
                 e.printStackTrace();
             }
         }
+
+    }
+
+    /*
+     * 예매시간표가 업데이트 되면 자동으로 메세지 전송해주는 메소드
+     * */
+    public void alertOpenMovieTime(String ChatId) {
 
     }
 }
