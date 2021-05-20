@@ -15,13 +15,15 @@ import java.util.TreeMap;
 
 public class Crawler {
 
-//    private final static Logger logger = LoggerFactory.getLogger(Crawler.class.getName());
     private final static Logger logger = Logger.getGlobal();
 
+    /*
+     * imax 상영관 시간표 정보(영화제목, 상영시간) 크롤링 메서드
+     * */
     public static TreeMap<LocalDateTime, String> timeTableCrawler() {
 
         /*
-        상영시간표 정보를 담을 HashMap
+        상영시간표 정보를 담을 TreeMap
         - Key: 상영날짜+상영시간(12자리, 숫자형태의 String 값 -> LocalDateTime 타입으로 변경)
         - Value: 영화 제목
         */
@@ -69,11 +71,13 @@ public class Crawler {
                         LocalDateTime playDateTime = stringToLocalDateTime(playDate, playTime);
                         logger.info(Integer.toString(playTime.length()));
 
-                        if (playTime.length() >= 1) {   // 상영 시작 시간은 뜨지만 예매가 마감된 경우, 시간표가 존재하지 않는 경우를 제외하기 위해서
+                        // 상영 시작 시간은 뜨지만 예매가 마감된 경우, 시간표가 존재하지 않는 경우를 제외하기 위해서
+                        if (playTime.length() >= 1) {
 
                             /*
                              * 키로 등록할 값이 이미 존재하는 경우 while문 탈출
-                             * ('sect-schedule'에 등록되지 않은 날짜를 조회하는 경우 예매가능한 가장 최근 날짜의 페이지로 redirect 되기 때문)
+                             * (예매 시간표가 존재하지 않는 날짜로 시간표를 조회하는 경우
+                             * 예매가능한 가장 최근 날짜의 페이지로 redirect 되기 때문)
                              */
                             if (imaxScreenMoviesMap.containsKey(playDateTime)) {
                                 duplCheck = false;
@@ -97,14 +101,15 @@ public class Crawler {
             }
 
         }// while
-        for (LocalDateTime key : imaxScreenMoviesMap.keySet()) {
+        
+        for (LocalDateTime key : imaxScreenMoviesMap.keySet()) {    // map에 저장된 데이터 확인 목적
             logger.info("키: " + key.toString() + ", 값: " + imaxScreenMoviesMap.get(key));
         }
         return imaxScreenMoviesMap;
     }
 
     /*
-    * imax 상영관에서 개봉하는 영화 리스트 크롤링(예매 예정작인 영화 이름을 알아야 하기 때문에)
+    * imax관에서 상영될 영화 리스트 크롤링(IMAX 상영 예정작들로만 입력 값을 제한하기 위해서)
     * */
     public static List<String> returnImaxLineUp() {
         ArrayList<String> imaxLineUpList = new ArrayList<>();
@@ -129,7 +134,9 @@ public class Crawler {
         return imaxLineUpList;
     }
 
-    // 크롤링한 예매 시간표 데이터를 Telegram bot이 보낼 수 있도록 메세지를 생성하는 메서드
+    /*
+    * 크롤링한 예매 시간표 데이터를 Telegram bot이 보낼 수 있도록 메세지를 생성하는 메서드
+    * */
     public static String timeTableMessage(TreeMap<LocalDateTime, String> timeTableMap, LocalDate userInputDate){
 
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM월 dd일 ");
@@ -148,7 +155,6 @@ public class Crawler {
             if (between >= 4 && between <= 27) {  // 조회 시점을 기준으로 같은 날인지 여부 체크 (심야 상영 체크를 위해 시간으로 비교)
                 logger.info(String.valueOf(between));
                 sb.append(timeTableMap.get(key))
-                        .append(key.format(dateFormatter))
                         .append(" ")
                         .append(key.format(timeFormatter))
                         .append("\n");

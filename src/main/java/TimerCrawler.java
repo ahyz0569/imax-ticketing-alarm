@@ -56,7 +56,8 @@ public class TimerCrawler extends TimerTask {
                     String movieTitle = schedule.select(".info-movie strong").text();
                     logger.info(movieTitle);
 
-                    if (movieTitle.equals(bookMovieTitle)){     // 업데이트 된 시간표의 영화명이 메세지로 전달받은 영화명과 일치하는 지 여부 판단
+                    // 업데이트 된 시간표의 영화명이 메세지로 전달받은 영화명과 일치하는 지 여부 판단
+                    if (movieTitle.equals(bookMovieTitle)){
                         MyImaxAlarmBot alarmBot = new MyImaxAlarmBot();
                         alarmBot.alertOpenMovieTime(this.chatId, bookMovieTitle, bookDate);
                     }

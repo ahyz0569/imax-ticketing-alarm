@@ -44,6 +44,7 @@ public class MyImaxAlarmBot extends TelegramLongPollingBot {
                                 "- 날짜는 숫자 4자리로 입력해야 하며, 입력하는 날짜는 당일 기준 14일 이내로 할 것 "));
             }
 
+            // 일반 메세지에 대한 응답 메세지 구현
             if (message.getText()==null) {
                 List<String> imaxLineUp = Crawler.returnImaxLineUp();
                 TreeMap<LocalDateTime, String> timeTableMap = Crawler.timeTableCrawler();
@@ -60,14 +61,15 @@ public class MyImaxAlarmBot extends TelegramLongPollingBot {
                     LocalDate userInputDate = Crawler.stringToLocalDate(userInput[1].trim());  // 이 부분도 사실 검사해야 함
                     LocalDate now = LocalDate.now();
 
-                    if (imaxLineUp.contains(userInput[0]) && !userInputDate.isBefore(now)) {  // 영화가 예매 라인업에 존재하고, 입력한 날짜가 현재보다 미래인 경우
+                    // 영화가 예매 라인업에 존재하고, 입력한 날짜가 현재보다 미래인 경우
+                    if (imaxLineUp.contains(userInput[0]) && !userInputDate.isBefore(now)) {
 
                         for (LocalDateTime playTime : timeTableMap.keySet()) {
                             LocalDate playDate = playTime.toLocalDate();
 
                             if (playDate.isEqual(userInputDate)) {   // 입력한 날짜에 이미 예매가 시작된 경우
                                 sb.append("그 영화 이미 예매 시작함\n")
-                                    .append(Crawler.timeTableMessage(timeTableMap, userInputDate)); // timeTableMessage() 메소드를 수정하여 시간표 메세지로 전달하자.
+                                    .append(Crawler.timeTableMessage(timeTableMap, userInputDate));
                                 break;
                             }
                         }
@@ -77,10 +79,11 @@ public class MyImaxAlarmBot extends TelegramLongPollingBot {
 
                             TimerTask task = new TimerCrawler(message.getChatId(), userInput[0], userInputDate);
                             Timer timer = new Timer();
-                            timer.schedule(task, 1_000, 300_000);  // 1초 후 5분마다 task 수행
+                            timer.schedule(task, 1_000, 300_000);  // 1초 후 5분마다 예매 시간표 확인 task 수행
                         }
 
-                    } else if (ChronoUnit.DAYS.between(userInputDate, now) >= 15) {  // 다소 먼 미래인 경우
+                        // 입력 날짜가 현재를 기준으로 15일 이후인 경우
+                    } else if (ChronoUnit.DAYS.between(userInputDate, now) >= 15) {
                         sb.append("14일 이내에 들어와서 다시 입력하셈. \n");
 
                     } else {    // 예매 예정작에 없는 경우
@@ -91,7 +94,7 @@ public class MyImaxAlarmBot extends TelegramLongPollingBot {
                         }
                         sb.append("\n위 영화 중에서 입력하셈");
                     }
-                } else {
+                } else {    // 입력값의 형식이 잘못된 경우
                     sb.append("입력이 잘못 되었음. 다시 입력 하셈");
                 }
 
@@ -109,7 +112,7 @@ public class MyImaxAlarmBot extends TelegramLongPollingBot {
     }
 
     /*
-     * 예매시간표가 업데이트 되면 바로 메세지 전송해주는 메소드
+     * 예매시간표가 업데이트 되면 바로 메세지를 전송해주는 메소드
      * */
     public void alertOpenMovieTime(String chatId, String movieTitle, LocalDate bookDate) {
         SendMessage message = new SendMessage();
