@@ -7,6 +7,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
@@ -60,7 +62,10 @@ public class MyImaxAlarmBot extends TelegramLongPollingBot {
 
                     if (sb.length() == 0) { // 입력한 날짜에 예매가 열리지 않은 경우
                         sb.append("ㅇㅋ 예매 시작하면 알려주겠음");
-                        alertOpenMovieTime(message.getChatId());
+
+                        TimerTask task = new TimerCrawler(message.getChatId(), userInput[0], userInputDate);
+                        Timer timer = new Timer();
+                        timer.schedule(task, 1_000, 300_000);  // 1초 후 5분마다 task 수행
                     }
 
                 } else if (ChronoUnit.DAYS.between(userInputDate, now) >= 15) {  // 다소 먼 미래인 경우
@@ -90,9 +95,18 @@ public class MyImaxAlarmBot extends TelegramLongPollingBot {
     }
 
     /*
-     * 예매시간표가 업데이트 되면 자동으로 메세지 전송해주는 메소드
+     * 예매시간표가 업데이트 되면 바로 메세지 전송해주는 메소드
      * */
-    public void alertOpenMovieTime(String ChatId) {
+    public void alertOpenMovieTime(String chatId, String movieTitle, LocalDate bookDate) {
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        
+        message.setText(bookDate.toString() + "에 상영하는 " +movieTitle+ " 예매 시작됨 ㄱㄱㄱ");
 
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
     }
 }
