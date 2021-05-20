@@ -53,9 +53,8 @@ public class MyImaxAlarmBot extends TelegramLongPollingBot {
                         LocalDate playDate = playTime.toLocalDate();
 
                         if (playDate.isEqual(userInputDate)) {   // 입력한 날짜에 이미 예매가 시작된 경우
-                            sb.append("그 영화 이미 예매 시작함");
-//                                .append("예매 시간표는 이거임");
-//                                .append(Crawler.timeTableMessage()) // timeTableMessage() 메소드를 수정하여 시간표 메세지로 전달하자.
+                            sb.append("그 영화 이미 예매 시작함\n")
+                                .append(Crawler.timeTableMessage(timeTableMap, userInputDate)); // timeTableMessage() 메소드를 수정하여 시간표 메세지로 전달하자.
                             break;
                         }
                     }

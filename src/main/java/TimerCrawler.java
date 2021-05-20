@@ -7,12 +7,15 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.TimerTask;
+import java.util.logging.Logger;
 
 public class TimerCrawler extends TimerTask {
 
     private final String chatId;
     private final String bookMovieTitle;
     private final LocalDate bookDate;
+
+    private final static Logger logger = Logger.getGlobal();
 
     public TimerCrawler(String chatId, String bookMovieTitle, LocalDate bookDate) {
         this.chatId = chatId;
@@ -23,7 +26,7 @@ public class TimerCrawler extends TimerTask {
     @Override
     public void run() {
         LocalDateTime localDateTime = LocalDateTime.now();
-        System.out.println("RUN TimerCrawler at " + localDateTime.toString());
+        logger.info("RUN TimerCrawler at " + localDateTime.toString());
 
         // 예매 페이지 URL
         String URL = "http://www.cgv.co.kr/common/showtimes/iframeTheater.aspx" +

@@ -129,31 +129,26 @@ public class Crawler {
         return imaxLineUpList;
     }
 
-    // Telegram bot이 보낼 메세지 세팅
-    public static String timeTableMessage(){
-
-        TreeMap<LocalDateTime, String> imaxScreenMoviesMap = timeTableCrawler();
+    // 크롤링한 예매 시간표 데이터를 Telegram bot이 보낼 수 있도록 메세지를 생성하는 메서드
+    public static String timeTableMessage(TreeMap<LocalDateTime, String> timeTableMap, LocalDate userInputDate){
 
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM월 dd일 ");
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH : mm");
 
-        LocalDateTime nowForCompare = LocalDate.now().atStartOfDay();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime inputDate = userInputDate.atStartOfDay();
 
         StringBuilder sb = new StringBuilder()
-                .append(nowForCompare.format(dateFormatter))
+                .append(inputDate.format(dateFormatter))
                 .append("용산 IMAX 시간표\n");
 
-        LocalDateTime firstMovieDateTime = imaxScreenMoviesMap.firstKey();
+        for (LocalDateTime key : timeTableMap.keySet()) {
 
-        // 제일 최근 날짜로 조회되는 키의 날짜와 현재 날짜가 같지 않아서 다음날 시간표가 조회되는 경우에는 다음날짜로 표시하게 해야함
-        if (ChronoUnit.DAYS.between(firstMovieDateTime, nowForCompare) != 0){
-            sb.append("지금은 예매가능한 영화가 없습니다. 내일 시간표를 안내해드립니다.\n");
-        }
+            long between = ChronoUnit.HOURS.between(inputDate, key);
 
-        for (LocalDateTime key : imaxScreenMoviesMap.keySet()) {
-            if (ChronoUnit.DAYS.between(key, now)==0) {  // 조회시점을 기준으로 같은 날인지 여부 체크
-                sb.append(imaxScreenMoviesMap.get(key))
+            if (between >= 4 && between <= 27) {  // 조회 시점을 기준으로 같은 날인지 여부 체크 (심야 상영 체크를 위해 시간으로 비교)
+                logger.info(String.valueOf(between));
+                sb.append(timeTableMap.get(key))
+                        .append(key.format(dateFormatter))
                         .append(" ")
                         .append(key.format(timeFormatter))
                         .append("\n");
@@ -194,6 +189,5 @@ public class Crawler {
 
         return LocalDate.of(year, month, day);
     }
-    // 위의 stringToLocalDateTime 메서드와 겹치는 코드가 있으니 나중에 리팩토링을 해야 겠다
 
 }
