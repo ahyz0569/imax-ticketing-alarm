@@ -6,14 +6,15 @@ import org.jsoup.select.Elements;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.TimerTask;
 import java.util.logging.Logger;
 
 public class TimerCrawler extends TimerTask {
 
-    private final String chatId;
-    private final String bookMovieTitle;
-    private final LocalDate bookDate;
+    private final String chatId;            // 메세지를 전달할 Chat ID 
+    private final String bookMovieTitle;    // 메세지를 통해 전달받은 영화명
+    private final LocalDate bookDate;       // 메세지를 통해 전달받은 예매 알림 날짜
 
     private final static Logger logger = Logger.getGlobal();
 
@@ -37,19 +38,25 @@ public class TimerCrawler extends TimerTask {
                 "&date=";
 
         try {
+            // date 쿼리에 사용될 날짜를 형식에 맞춰 변경 ( 예) 2021-05-20 -> 20210520 )
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+            String dateQuery = bookDate.format(dateFormatter);
+
             // connection 생성
-            Document doc = Jsoup.connect(URL+bookDate).get();
+            Document doc = Jsoup.connect(URL+dateQuery).get();
+            logger.info(dateQuery);
 
             // Atrribute 탐색
             Elements scheduleList = doc.getElementsByClass("col-times");
 
-            if (!scheduleList.isEmpty()){
+            if (!scheduleList.isEmpty()){   // 시간표가 업데이트 되었는지 판단
 
                 for (Element schedule : scheduleList) {
                     // title 검색
                     String movieTitle = schedule.select(".info-movie strong").text();
+                    logger.info(movieTitle);
 
-                    if (movieTitle.equals(bookMovieTitle)){
+                    if (movieTitle.equals(bookMovieTitle)){     // 업데이트 된 시간표의 영화명이 메세지로 전달받은 영화명과 일치하는 지 여부 판단
                         MyImaxAlarmBot alarmBot = new MyImaxAlarmBot();
                         alarmBot.alertOpenMovieTime(this.chatId, bookMovieTitle, bookDate);
                     }
