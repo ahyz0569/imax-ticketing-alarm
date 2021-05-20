@@ -35,4 +35,4 @@ Telegram bot API
 ```
 
 ## 사용 예시(스크린샷)
-![imax-ticketing-alarmbot-example](https://user-images.githubusercontent.com/57691047/119001710-30020000-b9c7-11eb-9c46-af26b3953a06.jpg)
+![imax-ticketing-alarmbot-example](https://user-images.githubusercontent.com/57691047/119026569-49fc0c80-b9e0-11eb-8707-4ddb6cb09c91.jpg)
