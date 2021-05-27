@@ -126,4 +126,21 @@ public class MyImaxAlarmBot extends TelegramLongPollingBot {
             e.printStackTrace();
         }
     }
+
+    /*
+     * 입력한 날짜에 시간표는 업데이트 되었지만 다른 영화가 오픈된 경우 메세지를 전송해주는 메소드
+     * */
+    public void alertNotOpenMovie(String chatId, String bookMovieTitle, String openMovieTitle, LocalDate bookDate) {
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+
+        message.setText(bookDate.toString() + "에 " + bookMovieTitle +
+                "말고 다른 영화를 상영함. 영화 제목은" +openMovieTitle+ " 임.");
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
 }

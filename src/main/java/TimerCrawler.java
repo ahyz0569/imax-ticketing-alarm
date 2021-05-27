@@ -53,13 +53,16 @@ public class TimerCrawler extends TimerTask {
 
                 for (Element schedule : scheduleList) {
                     // title 검색
-                    String movieTitle = schedule.select(".info-movie strong").text();
-                    logger.info(movieTitle);
+                    String openMovieTitle = schedule.select(".info-movie strong").text();
+                    logger.info(openMovieTitle);
 
                     // 업데이트 된 시간표의 영화명이 메세지로 전달받은 영화명과 일치하는 지 여부 판단
-                    if (movieTitle.equals(bookMovieTitle)){
+                    if (openMovieTitle.equals(bookMovieTitle)) {
                         MyImaxAlarmBot alarmBot = new MyImaxAlarmBot();
                         alarmBot.alertOpenMovieTime(this.chatId, bookMovieTitle, bookDate);
+                    } else {    // 시간표는 업데이트 되었지만 시간표에 영화명이 메세지로 전달받은 영화명과 다름
+                        MyImaxAlarmBot alarmBot = new MyImaxAlarmBot();
+                        alarmBot.alertNotOpenMovie(this.chatId, bookMovieTitle, openMovieTitle, bookDate);
                     }
 
                 }// for문

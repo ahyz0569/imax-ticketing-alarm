@@ -42,6 +42,7 @@ public class Crawler {
 
         int i = 1;  // plusDate에 사용할 인자
         boolean duplCheck = true;   // key 중복일 경우 while문을 빠져나오기 위해 사용
+
         while (duplCheck) {
 
             try {
