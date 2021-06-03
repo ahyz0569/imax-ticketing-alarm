@@ -41,6 +41,7 @@ public class Crawler {
                 "&date=";          // 이 부분이 가변형태의 데이터가 되어 삽입되어야 한다.
 
         int i = 1;  // plusDate에 사용할 인자
+        int dateCount = 0;  // 상영 시간표가 없는 날짜 count에 사용(공개된 시간표 사이에 날짜 공백이 존재하는 경우를 고려해야 함)
         boolean duplCheck = true;   // key 중복일 경우 while문을 빠져나오기 위해 사용
 
         while (duplCheck) {
@@ -48,14 +49,18 @@ public class Crawler {
             try {
                 // connection 생성
                 Document doc = Jsoup.connect(URL+strDate).get();
-                logger.info(strDate);
+                logger.info("strDate= " + strDate);
 
                 // Atrribute 탐색
                 Elements scheduleList = doc.getElementsByClass("col-times");
 
-                if (scheduleList.isEmpty() && stringToLocalDateTime(strDate, "0000").isAfter(now.atStartOfDay())){  // 조회 아에 안되는 경우
-                    duplCheck = false;
-                    break;
+                // 조회가 안되는 경우
+                if (scheduleList.isEmpty() && stringToLocalDateTime(strDate, "0000").isAfter(now.atStartOfDay())){
+                    dateCount++;
+                    if (dateCount >= 5){    // 시간표가 없는 날짜가 5일 이상인 경우에는 크롤링 중단
+                        duplCheck = false;
+                        break;
+                    }
                 }
 
                 for (Element schedule : scheduleList) {
@@ -70,7 +75,6 @@ public class Crawler {
                         String playTime = timetableElement.attr("data-playstarttime");
 
                         LocalDateTime playDateTime = stringToLocalDateTime(playDate, playTime);
-                        logger.info(Integer.toString(playTime.length()));
 
                         // 상영 시작 시간은 뜨지만 예매가 마감된 경우, 시간표가 존재하지 않는 경우를 제외하기 위해서
                         if (playTime.length() >= 1) {
@@ -102,7 +106,8 @@ public class Crawler {
             }
 
         }// while
-        
+
+        logger.info("TreeMap 조회 시작");
         for (LocalDateTime key : imaxScreenMoviesMap.keySet()) {    // map에 저장된 데이터 확인 목적
             logger.info("키: " + key.toString() + ", 값: " + imaxScreenMoviesMap.get(key));
         }
@@ -120,8 +125,6 @@ public class Crawler {
         try {
             Document document = Jsoup.connect(URL).get();
             Elements elements = document.select(".box-contents a strong");
-
-            System.out.println("elements = " + elements);
 
             for (Element element : elements) {
                 String movieTitle = element.text();
@@ -154,7 +157,6 @@ public class Crawler {
             long between = ChronoUnit.HOURS.between(inputDate, key);
 
             if (between >= 4 && between <= 27) {  // 조회 시점을 기준으로 같은 날인지 여부 체크 (심야 상영 체크를 위해 시간으로 비교)
-                logger.info(String.valueOf(between));
                 sb.append(timeTableMap.get(key))
                         .append(" ")
                         .append(key.format(timeFormatter))
